@@ -1,190 +1,11 @@
-Hello
-
-In this article we're going to set up Amazon EKS cluster by using TerraForm, EKS stand for Elastic Kubernetes service.
-
-You can create Kubernetes cluster locally by using kops, minikube etc. but that is a little bit difficult or complex.
-
-After creating Kubernetes cluster using kops or minikube locally, you'll have to manage it too
-
-So there will be system administration for the cluster that we create ourselves.
-
-So Amazon EKS is a managed service where you just pass a few simple information, about your cluster details, your node groups, the Kubernetes nodes, and it will create it for you automatically and manage it for you.
-
-You can anytime change the capacity of it and you can scale it whenever you want.
-
-Like we used MySQL servers manually we installed and use or we can use also.
-
-So like that we can set up our Kubernetes cluster by using Kops or minikube or we can use Amazon EKS.
-
-To begin you can go to AWS management console and search for EKS.
-
-It's really very simple service. It's just another Kubernetes.
-
-You get the kube config file after creating it and you can use the same way as you used any other Kubernetes cluster.
-
-Truth is EKS is very expensive. So we are going to create it quickly through TerraForm.
-
-And as soon as it's created, we are going to destroy it. We should not keep it for a very long time.
-
-You can find all the source code in the github repository and it's a very simple code. I'll explain the source code
-
-So, first we provision an EKS cluster. And then we create the worker nodes.
-
-Worker nodes pricing and cluster pricing are different and you need both of the cluster, you can think of it as the master node and worker nodes as the normal worker nodes of Kubernetes.
-
-And once it is created, you can connect by using Kubeconfig file and deploy your containerized applications.
-
-To create a Kubernetes cluster with Terraform we need to also create VPC
-
-Also the best part of TerraForm is you really don't need to write the code from the scratch.
-
-There are TerraForm modules you can use for free, just Google TerraForm modules, and click on the first link, then click 
-on Terraform Registry in 'Published Modules'
-
-or click this link, https://registry.terraform.io/browse/modules?product_intent=terraform
-
-
-Okay, so what are modules?
-
-Modules are containers for multiple resources that are used together.
-
-It's basically saying, you know, there's two files.
-
-Somebody has written code for you to create VPC. And that code you are going to use basically. You'll see ready made modules that you can use.
-
-AWS has already created modules to create VPC or to manage VPC.
-
-So our first requirement will be to create a VPC, and in that VPC we are going to create the EKS cluster and also the node.
-
-So let's quickly take a look at this VPC module.
-
-Let's scroll down the page
-
-So here's the usage.
-
-You say Module VPC.
-
-You mentioned the source name of the VPC.
-
-Now these are the variables.
-
-Name cidr Azs Private Subnets Public subnets enable Nat gateways.
-
-You just need to mention the value of the variables and there's a huge list of variables.
-
-If you click on inputs, you can customize it.
-
-You can mention Cidr.
-
-Create database subnet group.
-
-Create VPC.
-
-Customer gateways.
-
-So it's a huge list, all the variables.
-
-So whatever configuration changes you need to do, you need to look for the variables and look at their value.
-
-Now this is a map string, this is list map string.
-
-Now list is in square brackets, the same python list dictionaries strings.
-
-Default VPC name string.
-
-So you can take your time and go through this list.
-
-It's huge.
-
-But this is basically how you can use it and customize it by mentioning the variables.
-
-So I've just copy pasted this code and have made some changes which I'm going to show you.
-
-Let's look at the x module also.
-
-X.
-
-Now let's go back to the registry.
-
-Yes.
-
-Okay there.
-
-TerraForm modules X.
-
-So let's go to the Readme of this.
-
-Okay, so usage module.
-
-You mentioned the source version, cluster name, cluster version, cluster endpoint, public access.
-
-So again, these are the variables that you can use to customize this module settings and then VPC information.
-
-So first you have to create the VPC, not first at once we can create and then we can mention here that
-
-those subnets control plane IDs control plane is basically the master node, right?
-
-And a lot of other information that you can mention.
-
-I have kept it minimum.
-
-So, you know, you don't spend enough money or access money.
-
-So basically our TerraForm code will be these two modules plus the information like provider backend
-
-endpoints and stuff.
-
-So you go to GitHub.com slash coder slash repo profile project and then you switch to the branch.
-
-TerraForm hyphen x.
-
-And here we have all the code.
-
-Let's clone this code in our local machine.
-
-So open vs code.
-
-And go to your source control option, click on Clone Repository.
-
-And get the link.
-
-Copy.
-
-Clone repository.
-
-Paste it.
-
-Hit enter and select the folder where you want to save it.
-
-I'm going to create a folder.
-
-TerraForm hyphen x.
-
-And select as repository destination and wait for a moment till it clones and then we can switch to
-
-the branch.
-
-Open.
-
-Okay.
-
-Once it has cloned completely, switch to the branch.
-
-Click on this.
-
-And switch to the branch TerraForm hyphen x.
-
-And you should see all the code.
-
-Let's look at it one by one.
-
-First, this file Terraform.tf.
+terraform.tf
 
 This contains the dependencies that we need.
 
 So required providers.
 
-We will we are using AWS modules, which is VPC and yeah, that's the only one.
+We will we are using AWS modules, which is VPC and yeah, that's 
+the only one.
 
 So we need that random for encrypting the keys certificates.
 
@@ -776,9 +597,13 @@ These are two modules that we use, so better read from the documentation, differ
 
 you can use to customize this.
 
+Also check and use ChatGPT to ask it to generate the code for you.
+
 That's not a big deal.
 
 You can write code very easily.
 
-So that is all in this article 
+So that is all in this lecture.
+
+I will see you in the.
 
