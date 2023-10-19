@@ -68,6 +68,8 @@ Usage
 - Public Subnets
 - Enable Nat Gateways
 
+
+vpc.tf
 ```sh
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
@@ -153,7 +155,7 @@ Sets tags for public and private subnets, which can be used for Kubernetes netwo
 
 ### Module EKS
 Usage
-
+eks-cluster.tf
 ```sh
 module "eks" {
   source = "terraform-aws-modules/eks/aws"
@@ -260,7 +262,198 @@ Defines two managed node groups named "node-group-1" and "node-group-2" with spe
 So essentially, our Terraform code will consist of these two modules, along with additional details such as provider, backend, endpoints, and related configurations.
 
 
+### Setting Up Dependencies for the Project
 
+Let's outline the dependencies required for the project, including providers and backend configuration. Make sure to customize this setup to your specific needs.
+
+terraform.tf
+```sh
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "~> 4.46.0"
+    }
+
+    random = {
+      source = "hashicorp/random"
+      version = "~> 3.4.3"
+    }
+
+    tls = {
+      source = "hashicorp/tls"
+      version = "~> 4.0.4"
+    }
+
+    cloudinit = {
+      source = "hashicorp/cloudinit"
+      version = "~> 2.2.0"
+    }
+
+    kubernetes = {
+      source = "hashicorp/kubernetes"
+      version = "~> 2.16.1"
+    }
+  }
+
+  backend "s3" {
+    bucket         	   = "terra-eks12"
+    key              	   = "state/terraform.tfstate"
+    region         	   = "us-east-1"
+  }
+
+  required_version = "~> 1.3"
+}
+```
+This Terraform configuration file (`terraform.tf`) sets up the necessary providers, defines the backend for storing Terraform state, and specifies the required Terraform version.
+
+Breakdown of the terraform Block
+- **required_providers:** In this block, multiple providers are defined, including AWS(VPC), Random(For encrypting the key certificates), TLS, CloudInit, and Kubernetes. Each provider is assigned a specific source and version to ensure compatibility with our infrastructure.
+
+#### Required Providers
+For this project, we will be using AWS modules, specifically the VPC module.
+
+#### AWS VPC
+
+- **Provider**: AWS
+- **Module**: VPC
+
+#### Dependencies
+
+To run our infrastructure code, we have a few additional dependencies:
+
+- **Random**: We use the random provider for generating random values, which can be helpful for generating encryption keys and certificates.
+- **TLS**: TLS is essential for secure communication, and we use it in our project for encryption.
+- **Cloud Init**: Cloud Init is a tool for customizing cloud instances during the launch process. It's essential for configuring our instances.
+- **Kubernetes**: Kubernetes for EKS
+
+#### Backend Configuration
+
+To maintain the state of our Terraform resources, we need to set up a backend. In this example, we're using an S3 bucket as our backend. You can choose a different backend if needed, but ensure it's well-suited to your project.
+
+Here are the steps to configure the backend:
+
+1. Create an S3 Bucket: You can either use an existing S3 bucket or create a new one. To create a new bucket, follow these steps:
+   
+   - Log in to your AWS console.
+   - Create a new S3 bucket with a unique name. In this example, we've created a bucket named "terra-eks12." You should choose a different name.
+   - Specify the region for the bucket. In our case, it's "us-east-1." Ensure that the bucket and the cluster are in the same region. While not mandatory, it's a good practice.
+
+2. Mention the Bucket Name: Make sure to specify the S3 bucket name you created or selected for the backend.
+
+- **backend "s3"**
+This block configures the backend where Terraform state files are stored. In this case, an S3 bucket named "terra-eks12" is specified for state file storage. The key parameter identifies the location and name of the state file within the bucket. Additionally, the region is set to `"us-east-1"` to ensure the region consistency between the backend and your infrastructure.
+
+- **required_version:** Lastly, the required Terraform version is set to `"~> 1.3,"` ensuring that Terraform will be used within the specified version range.
+
+
+### Setting up the Variables file
+We will have two simple variables defined. The region and the Cluster name.
+
+variables.tf
+```sh
+variable "region" {
+  description = "AWS region"
+  type = string
+  default = "us-east-1"
+}
+
+variable "clusterName" {
+  description = "Name of the EKS cluster"
+  type = string
+  default = "terra-eks"
+}
+```
+The Breakdown
+
+- **variable "region" {**
+This line starts the definition of a new variable named `"region."` Variables in Terraform allow you to parameterize your configuration, making it easier to reuse and customize your infrastructure code.
+
+- **description = "AWS region"**
+This line sets a description for the `"region" variable.` The description is a human-readable explanation of what the variable is used for. In this case, it describes that the variable is meant to specify the AWS region.
+
+- **type = string**
+Here, the line specifies the data type of the variable. The `"region"` variable is of type `"string,"` which means it can hold text values, such as `"us-east-1."`
+
+- **default = "us-east-1"**
+This line sets a default value for the `"region"` variable. The default value is `"us-east-1,"` which means that if no value is explicitly provided when using this variable, Terraform will use `"us-east-1"` as the default value.
+
+The next set of lines defines another variable named "clusterName." The structure and purpose of this variable are very similar to the "region" variable, but it serves a different purpose:
+
+- **variable "clusterName" {**
+Starts the definition of a new variable named `"clusterName."`
+
+- **description = "Name of the EKS cluster"**
+Sets a description for the `"clusterName"` variable, indicating that it is used to specify the name of an Amazon Elastic Kubernetes Service (EKS) cluster.
+
+- **type = string**
+Specifies that the `"clusterName"` variable is of type `"string,"` which means it can hold text values.
+
+- **default = "terra-eks"**
+Sets a default value for the `"clusterName"` variable. The default value is `"terra-eks."`
+
+
+### Set up maintf file
+main.tf
+```sh
+provider "kubernetes" {
+  host = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+}
+
+provider "aws" {
+  region = var.region
+}
+
+data "aws_availability_zones" "available" {}
+
+locals {
+  cluster_name = var.clusterName
+}
+```
+The Breakdown
+
+Here, we're setting up the configuration for two key components: the Kubernetes provider and the AWS provider.
+
+#### Kubernetes Provider Configuration:
+We're configuring the Kubernetes provider to interact with a Kubernetes cluster. This provider needs two important values:
+
+- **Host:** This value represents the address of the Kubernetes cluster. But at this point, we don't have this address. We'll get it from another part of our code: module.eks.cluster_endpoint. Think of it as finding the URL for the control plane of the cluster, similar to what you'd have in a kubeconfig file. The module.eks is responsible for creating the cluster, and it will provide this address.
+
+- **Cluster Certificate:** This is used for secure communication with the Kubernetes cluster. We're decoding this certificate from module.eks.cluster_certificate_authority_data using base64 decoding. The module.eks provides this data, and we're storing it in the `cluster_ca_certificate` variable. These values are essential for setting up our Kubernetes provider to interact with the cluster.
+
+#### AWS Provider Configuration:
+We're also configuring the AWS provider, which is used to manage resources in AWS. This provider requires specifying the AWS region. In our case, the region is specified as `var.region.` The `var.region` variable is defined in our variables file, and it is set to "US East 1." This means that when we work with AWS resources in this configuration, it will be in the "US East 1" region.
+
+This configuration ensures that we have the necessary information for both our Kubernetes and AWS providers to work correctly in our infrastructure.
+
+- **provider "kubernetes" {**
+This line starts the definition of a Kubernetes provider configuration block. It specifies that Terraform will interact with a Kubernetes cluster. The block contains the following settings:
+
+- **host = module.eks.cluster_endpoint:** This setting defines the host address of the Kubernetes cluster. It uses the `module.eks.cluster_endpoint` variable to obtain the endpoint of the Amazon Elastic Kubernetes Service (EKS) cluster created with Terraform.
+And in this we need to pass the value for host. (So we don't have the host yet in that we have the variable cluster endpoint.
+So once this is created, it is going to return the endpoint of the cluster) 
+
+- **cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data):** This setting specifies the cluster's CA certificate data. It uses the `module.eks.cluster_certificate_authority_data` variable, which likely contains the certificate authority data for the EKS cluster. The `base64decode` function decodes the `base64-encoded` data.
+
+- **provider "aws" {**
+This line starts the definition of an AWS provider configuration block. It specifies that Terraform will interact with AWS resources. The block contains the following setting:
+
+- **region = var.region:** This setting defines the AWS region to use for AWS resources. It uses the `var.region` variable, which allows you to specify the region for AWS operations. This region should match the one specified in the `var.region` variable defined earlier in our variables file.
+
+- **data "aws_availability_zones" "available" {}**
+This line specifies a data block to retrieve information about AWS availability zones. This information can be used in our Terraform configuration for making decisions related to resource placement and redundancy. The block has the following attributes:
+
+- **aws_availability_zones:** This is the data source for availability zones.
+
+- **"available":** This is the name given to the data block, and you can refer to it later in your configuration using this name.
+
+- **locals {**
+This line starts the definition of a local block. Locals are used to define variables that are specific to your Terraform configuration and are not meant for direct interaction with resources or providers. In this block, a local variable is defined:
+
+- **cluster_name = var.clusterName:** This local variable named cluster_name is assigned the value of the `var.clusterName` variable, which allows you to specify the name of the EKS cluster.
+
+`var.clusterName` is defined in our variable file, and this local variable makes it more convenient to reference within our configuration.
 
 
 ## Using Terraform for EKS Setup
