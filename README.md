@@ -1,5 +1,3 @@
-# Setup EKS Cluster using Terraform 
-
 # Setting up an Amazon EKS Cluster with Terraform
 
 In this article, I'll guide you through setting up an Amazon Elastic Kubernetes Service (EKS) cluster using Terraform. EKS is a managed Kubernetes service provided by Amazon Web Services (AWS) that allows for easy deployment and management of Kubernetes clusters.
@@ -14,16 +12,16 @@ To get started with Terraform, you'll need to install it and set up an IAM user 
 To install Terraform on Windows, you can use the Chocolatey package manager. If you haven't installed Chocolatey already, search google on how to install then install it.
 
 Open your terminal (e.g., Git Bash) and run the following command:
-```sh
-choco install terraform
-```
+    ```sh
+    choco install terraform
+    ```
 2. **MacOS (using Homebrew):**
 For MacOS users, Terraform can be installed using Homebrew. If you don't have Homebrew installed, you can set it up by visiting the Homebrew website.
 
 Open your terminal and run this command:
-```sh
-brew install terraform
-```
+    ```sh
+    brew install terraform
+    ```
 This will install Terraform on your system.
 
 #### Creating an IAM User
@@ -45,9 +43,9 @@ You can use a terminal like Git Bash on Windows or the built-in terminal on MacO
 
 2. **Run aws configure:**
 Use the following command to configure aws credential using your IAM user credentials, specifying the AWS region and setting the output format to JSON:
-```sh
-aws configure
-```
+    ```sh
+    aws configure
+    ```
 You will be prompted to enter the access key ID, secret access key, region (e.g., "us-east-1" for the US East region), and output format (choose "json").
 
 With these steps, you'll have Terraform installed and properly configured with your IAM user's access credentials, allowing you to interact with AWS resources as needed in your infrastructure code.
@@ -168,195 +166,195 @@ Usage
 
 
 vpc.tf
-```sh
-module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
-  version = "3.14.2"
+  ```sh
+    module "vpc" {
+    source = "terraform-aws-modules/vpc/aws"
+    version = "3.14.2"
 
-  name = "terra-eks-vpc"
+    name = "terra-eks-vpc"
 
-  cidr = "172.20.0.0/16"
-  azs = slice(data.aws_availability_zones.available.names, 0, 3)
+    cidr = "172.20.0.0/16"
+    azs = slice(data.aws_availability_zones.available.names, 0, 3)
 
-  private_subnets = ["172.20.1.0/24", "172.20.2.0/24", "172.20.3.0/24"]
-  public_subnets = ["172.20.4.0/24", "172.20.5.0/24", "172.20.6.0/24"]
+    private_subnets = ["172.20.1.0/24", "172.20.2.0/24", "172.20.3.0/24"]
+    public_subnets = ["172.20.4.0/24", "172.20.5.0/24", "172.20.6.0/24"]
 
-  enable_nat_gateway = true
-  single_nat_gateway = true
-  enable_dns_hostnames = true
+    enable_nat_gateway = true
+    single_nat_gateway = true
+    enable_dns_hostnames = true
 
-  public_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/elb" = 1
-  }
+    public_subnet_tags = {
+        "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+        "kubernetes.io/role/elb" = 1
+    }
 
-  private_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/internal-elb" = 1
-  }
-}
-```
+    private_subnet_tags = {
+        "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+        "kubernetes.io/role/internal-elb" = 1
+    }
+    }
+  ```
 #### Module Declaration:
-```sh
-module "vpc" {
-```
+    ```sh
+    module "vpc" {
+    ```
 This declares a Terraform module named "vpc".
 
 #### Module Source and Version:
-```sh
-source = "terraform-aws-modules/vpc/aws"
-version = "3.14.2"
-```
+    ```sh
+    source = "terraform-aws-modules/vpc/aws"
+    version = "3.14.2"
+    ```
 Specifies the source and version of the module to use. In this case, it's using the `terraform-aws-modules` organization's VPC module version 3.14.2.
 
 #### VPC Name and CIDR Block:
-```sh
-name = "terra-eks-vpc"
-cidr = "172.20.0.0/16"
-```
+    ```sh
+    name = "terra-eks-vpc"
+    cidr = "172.20.0.0/16"
+    ```
 Sets the name and CIDR block for the VPC.
 
 #### Availability Zones (AZs):
-```sh
-azs = slice(data.aws_availability_zones.available.names, 0, 3)
-```
+    ```sh
+    azs = slice(data.aws_availability_zones.available.names, 0, 3)
+    ```
 Determines the availability zones to use for the VPC. It's using the first 3 AZs available in the AWS region. Returned as a list, stored in the variable `azs` Or you can just create a list here and mention it manually.
 
 
 #### Subnet Configurations:
-```sh
-private_subnets = ["172.20.1.0/24", "172.20.2.0/24", "172.20.3.0/24"]
-public_subnets = ["172.20.4.0/24", "172.20.5.0/24", "172.20.6.0/24"]
-```
+    ```sh
+    private_subnets = ["172.20.1.0/24", "172.20.2.0/24", "172.20.3.0/24"]
+    public_subnets = ["172.20.4.0/24", "172.20.5.0/24", "172.20.6.0/24"]
+    ```
 Defines the CIDR blocks for private and public subnets within the VPC. If making your subnets two remember to change the azs from 0 to 3 to 0 to 2.
 
 
 #### NAT Gateway and DNS Settings:
-```sh
-enable_nat_gateway = true
-single_nat_gateway = true
-enable_dns_hostnames = true
-```
+    ```sh
+    enable_nat_gateway = true
+    single_nat_gateway = true
+    enable_dns_hostnames = true
+    ```
 Enables NAT gateways, a single NAT gateway, and DNS hostnames within the VPC. So it will create a nat gateway and you will have three nat gateways if you have three private subnets.
 
 #### Tags for Subnets:
-```sh
-public_subnet_tags = {
-  "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-  "kubernetes.io/role/elb" = 1
-}
+    ```sh
+    public_subnet_tags = {
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/elb" = 1
+    }
 
-private_subnet_tags = {
-  "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-  "kubernetes.io/role/internal-elb" = 1
-}
-```
+    private_subnet_tags = {
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb" = 1
+    }
+    ```
 Sets tags for public and private subnets, which can be used for Kubernetes networking purposes. From the documention you have to specify tags. The given variable name local.cluster_name will be generated after the cluster is created
 
 ### Module EKS
 Usage
 eks-cluster.tf
-```sh
-module "eks" {
-  source = "terraform-aws-modules/eks/aws"
-  version = "19.0.4"
+    ```sh
+    module "eks" {
+    source = "terraform-aws-modules/eks/aws"
+    version = "19.0.4"
 
-  cluster_name = local.cluster_name
-  cluster_version = "1.27"
+    cluster_name = local.cluster_name
+    cluster_version = "1.27"
 
-  vpc_id = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
-  cluster_endpoint_public_access = true
+    vpc_id = module.vpc.vpc_id
+    subnet_ids = module.vpc.private_subnets
+    cluster_endpoint_public_access = true
 
-  eks_managed_node_group_defaults = {
-    ami_type = "AL2_x86_64"
+    eks_managed_node_group_defaults = {
+        ami_type = "AL2_x86_64"
 
-  }
-
-  eks_managed_node_groups = {
-    one = {
-      name = "node-group-1"
-
-      instance_types = ["t3.small"]
-
-      min_size = 1
-      max_size = 3
-      desired_size = 2
     }
 
-    two = {
-      name = "node-group-2"
+    eks_managed_node_groups = {
+        one = {
+        name = "node-group-1"
 
-      instance_types = ["t3.small"]
+        instance_types = ["t3.small"]
 
-      min_size = 1
-      max_size = 2
-      desired_size = 1
+        min_size = 1
+        max_size = 3
+        desired_size = 2
+        }
+
+        two = {
+        name = "node-group-2"
+
+        instance_types = ["t3.small"]
+
+        min_size = 1
+        max_size = 2
+        desired_size = 1
+        }
     }
-  }
-}
-```
+    }
+    ```
 
 #### Module Declaration:
-```sh
-module "eks" {
-```
+    ```sh
+    module "eks" {
+    ```
 This declares a Terraform module named "eks" for managing an EKS cluster.
 
 #### Module Source and Version:
-```sh
-source = "terraform-aws-modules/eks/aws"
-version = "19.0.4"
-```
+    ```sh
+    source = "terraform-aws-modules/eks/aws"
+    version = "19.0.4"
+    ```
 Specifies the source and version of the module to use. In this case, it's using the `terraform-aws-modules` organization's EKS module version 19.0.4.
 
 #### Cluster Name and Version:
-```sh
-cluster_name = local.cluster_name
-cluster_version = "1.27"
-```
+    ```sh
+    cluster_name = local.cluster_name
+    cluster_version = "1.27"
+    ```
 Sets the name and version of the EKS cluster.
 
 #### VPC and Subnet IDs:
-```sh
-vpc_id = module.vpc.vpc_id
-subnet_ids = module.vpc.private_subnets
-```
+    ```sh
+    vpc_id = module.vpc.vpc_id
+    subnet_ids = module.vpc.private_subnets
+    ```
 Specifies the VPC ID and the IDs of the private subnets where the EKS nodes will be placed.
 
 #### Cluster Endpoint Public Access:
-```sh
-cluster_endpoint_public_access = true
-```
+    ```sh
+    cluster_endpoint_public_access = true
+    ```
 Enables public access to the EKS cluster endpoint.
 
 #### EKS Managed Node Group Defaults:
-```sh
-eks_managed_node_group_defaults = {
-  ami_type = "AL2_x86_64"
-}
-```
+    ```sh
+    eks_managed_node_group_defaults = {
+    ami_type = "AL2_x86_64"
+    }
+    ```
 Sets defaults for the managed node groups, specifying the Amazon Machine Image (AMI) type.
 
 #### EKS Managed Node Groups:
-```sh
-eks_managed_node_groups = {
-  one = {
-    name = "node-group-1"
-    instance_types = ["t3.small"]
-    min_size = 1
-    max_size = 3
-    desired_size = 2
-  },
-  two = {
-    name = "node-group-2"
-    instance_types = ["t3.small"]
-    min_size = 1
-    max_size = 2
-    desired_size = 1
-  }
-}
-```
+    ```sh
+    eks_managed_node_groups = {
+    one = {
+        name = "node-group-1"
+        instance_types = ["t3.small"]
+        min_size = 1
+        max_size = 3
+        desired_size = 2
+    },
+    two = {
+        name = "node-group-2"
+        instance_types = ["t3.small"]
+        min_size = 1
+        max_size = 2
+        desired_size = 1
+    }
+    }
+    ```
 Defines two managed node groups named "node-group-1" and "node-group-2" with specified configurations for instance types, minimum size, maximum size, and desired size.
 The name of the node group instance type is "T3 small." When you use this specific instance type, you'll be charged for the usage of T3 small instances and the cluster itself.
 
@@ -380,44 +378,44 @@ So essentially, our Terraform code will consist of these two modules, along with
 Let's outline the dependencies required for the project, including providers and backend configuration. Make sure to customize this setup to your specific needs.
 
 terraform.tf
-```sh
-terraform {
-  required_providers {
-    aws = {
-      source = "hashicorp/aws"
-      version = "~> 4.46.0"
+    ```sh
+    terraform {
+    required_providers {
+        aws = {
+        source = "hashicorp/aws"
+        version = "~> 4.46.0"
+        }
+
+        random = {
+        source = "hashicorp/random"
+        version = "~> 3.4.3"
+        }
+
+        tls = {
+        source = "hashicorp/tls"
+        version = "~> 4.0.4"
+        }
+
+        cloudinit = {
+        source = "hashicorp/cloudinit"
+        version = "~> 2.2.0"
+        }
+
+        kubernetes = {
+        source = "hashicorp/kubernetes"
+        version = "~> 2.16.1"
+        }
     }
 
-    random = {
-      source = "hashicorp/random"
-      version = "~> 3.4.3"
+    backend "s3" {
+        bucket         	   = "terra-eks12"
+        key              	   = "state/terraform.tfstate"
+        region         	   = "us-east-1"
     }
 
-    tls = {
-      source = "hashicorp/tls"
-      version = "~> 4.0.4"
+    required_version = "~> 1.3"
     }
-
-    cloudinit = {
-      source = "hashicorp/cloudinit"
-      version = "~> 2.2.0"
-    }
-
-    kubernetes = {
-      source = "hashicorp/kubernetes"
-      version = "~> 2.16.1"
-    }
-  }
-
-  backend "s3" {
-    bucket         	   = "terra-eks12"
-    key              	   = "state/terraform.tfstate"
-    region         	   = "us-east-1"
-  }
-
-  required_version = "~> 1.3"
-}
-```
+    ```
 This Terraform configuration file (`terraform.tf`) sets up the necessary providers, defines the backend for storing Terraform state, and specifies the required Terraform version.
 
 Breakdown of the terraform Block
@@ -464,19 +462,19 @@ This block configures the backend where Terraform state files are stored. In thi
 We will have two simple variables defined. The region and the Cluster name.
 
 variables.tf
-```sh
-variable "region" {
-  description = "AWS region"
-  type = string
-  default = "us-east-1"
-}
+    ```sh
+    variable "region" {
+    description = "AWS region"
+    type = string
+    default = "us-east-1"
+    }
 
-variable "clusterName" {
-  description = "Name of the EKS cluster"
-  type = string
-  default = "terra-eks"
-}
-```
+    variable "clusterName" {
+    description = "Name of the EKS cluster"
+    type = string
+    default = "terra-eks"
+    }
+    ```
 The Breakdown
 
 - **variable "region" {**
@@ -508,22 +506,22 @@ Sets a default value for the `"clusterName"` variable. The default value is `"te
 
 ### Set up maintf file
 main.tf
-```sh
-provider "kubernetes" {
-  host = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-}
+    ```sh
+    provider "kubernetes" {
+    host = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    }
 
-provider "aws" {
-  region = var.region
-}
+    provider "aws" {
+    region = var.region
+    }
 
-data "aws_availability_zones" "available" {}
+    data "aws_availability_zones" "available" {}
 
-locals {
-  cluster_name = var.clusterName
-}
-```
+    locals {
+    cluster_name = var.clusterName
+    }
+    ```
 The Breakdown
 
 Here, we're setting up the configuration for two key components: the Kubernetes provider and the AWS provider.
@@ -570,9 +568,9 @@ This line starts the definition of a local block. Locals are used to define vari
 ### Run Terraform Commands
 ## Terraform `init` Command
 1. **Run terraform init**
-```sh
-terraform init
-```
+    ```sh
+    terraform init
+    ```
 
 `terraform init` is a fundamental command in Terraform, a widely used infrastructure as code (IaC) tool. This command is essential for initializing a new or existing Terraform configuration within a working directory. Here's a breakdown of what `terraform init` accomplishes:
 
@@ -593,9 +591,9 @@ In summary, `terraform init` sets the stage for your Terraform environment, ensu
 2. **Run terraform plan**
 Run the following command to create an execution plan:
 
-```sh
-terraform plan
-```
+    ```sh
+    terraform plan
+    ```
 This command shows you what actions Terraform will take before actually doing it. Verify the plan and ensure it aligns with your expectations.
 
 On this project, the plan is to add 53 resources.
@@ -603,9 +601,9 @@ On this project, the plan is to add 53 resources.
 3. **Applying the Terraform Configuration**
 Apply the Terraform configuration to create the EKS cluster and associated resources:
 
-```sh
-terraform apply
-```
+    ```sh
+    terraform apply
+    ```
 You will be prompted to confirm the action. Enter yes to proceed. This might take some time.
 
 After some waiting, my cluster has been successfully created. You can now access it through the cluster's endpoint. To view the cluster from the AWS Management Console, switch to the North Virginia region.
@@ -621,19 +619,19 @@ Here's a view of our VPC, and within the subnets, you should see a total of six 
 4. **Configuring kubectl**
 After the EKS cluster is successfully created, configure kubectl to connect to your cluster. Run the following command, replacing my-eks-cluster with your cluster name:
 
-```sh
-aws eks update-kubeconfig --region us-east-1 --name terra-eks
-```
+    ```sh
+    aws eks update-kubeconfig --region us-east-1 --name terra-eks
+    ```
 The terminal will output the location of your kubeconfig file after that command
 
 Run this to see the kube config file
-```sh
-cat ~/.kube/config
-```
+    ```sh
+    cat ~/.kube/config
+    ```
 Now run
-```sh
-kubectl get nodes
-```
+    ```sh
+    kubectl get nodes
+    ```
 Running the kubectl get nodes command will provide you with information about the nodes that are part of your EKS cluster. The output of this command displays details about the nodes in your cluster, including their current status and available resources. Here's what the output typically shows:
 
 - **NAME**: This column lists the names of the individual nodes within your EKS cluster. Each node represents an Amazon Elastic Compute Cloud (EC2) instance that is part of your Kubernetes cluster.
@@ -649,9 +647,9 @@ Running the kubectl get nodes command will provide you with information about th
 By running kubectl get nodes, you can monitor the health and status of the nodes in your EKS cluster. If you encounter issues or want to check node availability, this command provides essential insights into the cluster's infrastructure.
 
 5. **Delete Cluster**
-```sh
-terraform destroy
-```
+    ```sh
+    terraform destroy
+    ```
 Enter `yes` when it prompts
 
 That will delete everything
@@ -663,7 +661,7 @@ Setting up an Amazon EKS cluster using Terraform provides an efficient and cost-
 You can find the source code and additional explanations in the [GitHub repository](https://github.com/Pearlicia/setup-eks-cluster-using-terraform).
 
 
-This article was written by [Felicia] on [Date]. If you have any questions or feedback, feel free to reach out at [feliciaebikon@email.com].
+This article was written by [Felicia Ebikon]. If you have any questions or feedback, feel free to reach out at [feliciaebikon@email.com].
 
 Keep learning and happy coding!
 
